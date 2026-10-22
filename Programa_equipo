@@ -1,0 +1,419 @@
+/============================================================
+// PROYECTO: AYUDAGO
+// Sistema de donación de alimentos y ropa.
+// ============================================================
+
+using System;
+using System.Collections.Generic;
+
+// ------------------------------------------------------------
+// CLASE Donacion: guarda los datos de UNA donación.
+// Usamos campos públicos (sin get/set) para hacerlo más simple.
+// ------------------------------------------------------------
+class Donacion
+{
+    public string codigo;          // DON-001, DON-002...
+    public string donante;
+    public string producto;
+    public string categoria;       // Alimentos / Ropa
+    public string descripcion;
+    public int cantidad;
+    public string ubicacion;
+    public string estado;          // Disponible / Reservada / Entregada
+}
+
+// ------------------------------------------------------------
+// CLASE Reserva: guarda los datos de UNA reserva.
+// ------------------------------------------------------------
+class Reserva
+{
+    public string codigoReserva;   // RES-001, RES-002...
+    public string codigoDonacion;
+    public string beneficiario;
+    public string producto;
+    public int cantidad;
+    public string estado;          // Reservada / Entregada
+}
+
+// ------------------------------------------------------------
+// CLASE Program: contiene el menú y toda la lógica.
+// ------------------------------------------------------------
+class Program
+{
+    // Listas que guardan todos los datos mientras el programa corre.
+    static List<Donacion> donaciones = new List<Donacion>();
+    static List<Reserva> reservas = new List<Reserva>();
+
+    // Contadores para generar DON-001, RES-001...
+    static int numDonacion = 0;
+    static int numReserva = 0;
+
+    // =====================================================
+    // MAIN: bucle principal del menú.
+    // =====================================================
+    static void Main(string[] args)
+    {
+
+
+        int opcion = 0;
+        while (opcion != 8)
+        {
+            MostrarMenu();
+            opcion = LeerEntero("Seleccione una opción: ");
+
+            if (opcion == 1) RegistrarDonacion();
+            else if (opcion == 2) MostrarCatalogo();
+            else if (opcion == 3) BuscarDonacion();
+            else if (opcion == 4) ReservarDonacion();
+            else if (opcion == 5) MostrarMisDonaciones();
+            else if (opcion == 6) MostrarReservas();
+            else if (opcion == 7) MarcarEntregada();
+            else if (opcion == 8) Console.WriteLine("\n¡Gracias por usar AyudaGo!");
+            else Console.WriteLine("Opción no válida. Intente de nuevo.");
+
+            if (opcion != 8)
+            {
+                Console.WriteLine("\nPresione ENTER para continuar...");
+                Console.ReadLine();
+                Console.Clear();
+            }
+        }
+    }
+
+    // =====================================================
+    // Muestra el menú de opciones en pantalla.
+    // =====================================================
+    static void MostrarMenu()
+    {
+        Console.WriteLine("========================================");
+        Console.WriteLine("              AYUDAGO");
+        Console.WriteLine("  Conectando personas, alimentando sonrisas");
+        Console.WriteLine("========================================");
+        Console.WriteLine("1. Registrar donación.");
+        Console.WriteLine("2. Mostrar catálogo de donaciones.");
+        Console.WriteLine("3. Buscar donación.");
+        Console.WriteLine("4. Reservar donación.");
+        Console.WriteLine("5. Mostrar mis donaciones.");
+        Console.WriteLine("6. Mostrar reservas.");
+        Console.WriteLine("7. Marcar donación como entregada.");
+        Console.WriteLine("8. Salir.");
+        Console.WriteLine("----------------------------------------");
+    }
+
+    // =====================================================
+    // OPCIÓN 1: Registrar donación.
+    // =====================================================
+    static void RegistrarDonacion()
+    {
+        Console.WriteLine("\n--- REGISTRAR DONACIÓN ---");
+
+        Donacion d = new Donacion();
+
+        d.donante = LeerTexto("Nombre del donante: ");
+        d.producto = LeerTexto("Nombre del producto: ");
+        d.categoria = LeerCategoria();
+        d.descripcion = LeerTexto("Descripción: ");
+        d.cantidad = LeerEnteroPositivo("Cantidad disponible: ");
+        d.ubicacion = LeerTexto("Ubicación de recogida: ");
+
+        numDonacion = numDonacion + 1;
+        d.codigo = "DON-" + numDonacion.ToString("000");
+        d.estado = "Disponible";
+
+        donaciones.Add(d);
+
+        Console.WriteLine("\n[OK] Donación registrada con código " + d.codigo);
+    }
+
+    // =====================================================
+    // OPCIÓN 2: Mostrar catálogo.
+    // =====================================================
+    static void MostrarCatalogo()
+    {
+        Console.WriteLine("\n--- CATÁLOGO DE DONACIONES ---");
+
+        if (donaciones.Count == 0)
+        {
+            Console.WriteLine("No hay donaciones registradas.");
+            return;
+        }
+
+        for (int i = 0; i < donaciones.Count; i++)
+        {
+            Donacion d = donaciones[i];
+            Console.WriteLine("Código:    " + d.codigo);
+            Console.WriteLine("  Producto:  " + d.producto);
+            Console.WriteLine("  Categoría: " + d.categoria);
+            Console.WriteLine("  Cantidad:  " + d.cantidad);
+            Console.WriteLine("  Donante:   " + d.donante);
+            Console.WriteLine("  Ubicación: " + d.ubicacion);
+            Console.WriteLine("  Estado:    " + d.estado);
+            Console.WriteLine("----------------------------------------");
+        }
+    }
+
+    // =====================================================
+    // OPCIÓN 3: Buscar donación por nombre, categoría o código.
+    // =====================================================
+    static void BuscarDonacion()
+    {
+        Console.WriteLine("\n--- BUSCAR DONACIÓN ---");
+        Console.WriteLine("1. Por nombre del producto");
+        Console.WriteLine("2. Por categoría");
+        Console.WriteLine("3. Por código");
+        int criterio = LeerEntero("Seleccione un criterio: ");
+
+        if (criterio < 1 || criterio > 3)
+        {
+            Console.WriteLine("Criterio no válido.");
+            return;
+        }
+
+        string busqueda = LeerTexto("Ingrese el texto a buscar: ").ToLower();
+        bool encontrado = false;
+
+        for (int i = 0; i < donaciones.Count; i++)
+        {
+            Donacion d = donaciones[i];
+            bool coincide = false;
+
+            if (criterio == 1 && d.producto.ToLower().Contains(busqueda)) coincide = true;
+            if (criterio == 2 && d.categoria.ToLower() == busqueda) coincide = true;
+            if (criterio == 3 && d.codigo.ToLower() == busqueda) coincide = true;
+
+            if (coincide)
+            {
+                Console.WriteLine("Código: " + d.codigo +
+                                  " | Producto: " + d.producto +
+                                  " | Categoría: " + d.categoria +
+                                  " | Cantidad: " + d.cantidad +
+                                  " | Estado: " + d.estado);
+                encontrado = true;
+            }
+        }
+
+        if (!encontrado)
+            Console.WriteLine("No se encontraron donaciones con ese criterio.");
+    }
+
+    // =====================================================
+    // OPCIÓN 4: Reservar una donación disponible.
+    // =====================================================
+    static void ReservarDonacion()
+    {
+        Console.WriteLine("\n--- RESERVAR DONACIÓN ---");
+
+        if (donaciones.Count == 0)
+        {
+            Console.WriteLine("No hay donaciones registradas.");
+            return;
+        }
+
+        string codigo = LeerTexto("Código de la donación: ");
+        Donacion d = BuscarPorCodigo(codigo);
+
+        if (d == null)
+        {
+            Console.WriteLine("No existe una donación con ese código.");
+            return;
+        }
+
+        if (d.estado != "Disponible")
+        {
+            Console.WriteLine("La donación no se puede reservar. Estado actual: " + d.estado);
+            return;
+        }
+
+        int cantidad = LeerEnteroPositivo("Cantidad solicitada: ");
+        if (cantidad > d.cantidad)
+        {
+            Console.WriteLine("Solo hay " + d.cantidad + " unidades disponibles.");
+            return;
+        }
+
+        string beneficiario = LeerTexto("Nombre del beneficiario: ");
+
+        numReserva = numReserva + 1;
+        Reserva r = new Reserva();
+        r.codigoReserva = "RES-" + numReserva.ToString("000");
+        r.codigoDonacion = d.codigo;
+        r.beneficiario = beneficiario;
+        r.producto = d.producto;
+        r.cantidad = cantidad;
+        r.estado = "Reservada";
+        reservas.Add(r);
+
+        d.cantidad = d.cantidad - cantidad;
+        d.estado = "Reservada";
+
+        Console.WriteLine("\n[OK] Reserva registrada con código " + r.codigoReserva);
+    }
+
+    // =====================================================
+    // OPCIÓN 5: Mostrar las donaciones de un donante.
+    // =====================================================
+    static void MostrarMisDonaciones()
+    {
+        Console.WriteLine("\n--- MIS DONACIONES ---");
+        string nombre = LeerTexto("Nombre del donante: ").ToLower();
+
+        bool encontrado = false;
+        for (int i = 0; i < donaciones.Count; i++)
+        {
+            Donacion d = donaciones[i];
+            if (d.donante.ToLower() == nombre)
+            {
+                Console.WriteLine("Código: " + d.codigo +
+                                  " | Producto: " + d.producto +
+                                  " | Cantidad: " + d.cantidad +
+                                  " | Estado: " + d.estado);
+                encontrado = true;
+            }
+        }
+
+        if (!encontrado)
+            Console.WriteLine("No se encontraron donaciones para ese donante.");
+    }
+
+    // =====================================================
+    // OPCIÓN 6: Mostrar todas las reservas.
+    // =====================================================
+    static void MostrarReservas()
+    {
+        Console.WriteLine("\n--- RESERVAS REGISTRADAS ---");
+
+        if (reservas.Count == 0)
+        {
+            Console.WriteLine("No hay reservas registradas.");
+            return;
+        }
+
+        for (int i = 0; i < reservas.Count; i++)
+        {
+            Reserva r = reservas[i];
+            Console.WriteLine("Reserva: " + r.codigoReserva +
+                              " | Donación: " + r.codigoDonacion +
+                              " | Beneficiario: " + r.beneficiario +
+                              " | Producto: " + r.producto +
+                              " | Cantidad: " + r.cantidad +
+                              " | Estado: " + r.estado);
+        }
+    }
+
+    // =====================================================
+    // OPCIÓN 7: Marcar donación reservada como entregada.
+    // =====================================================
+    static void MarcarEntregada()
+    {
+        Console.WriteLine("\n--- MARCAR DONACIÓN COMO ENTREGADA ---");
+
+        string codigo = LeerTexto("Código de la donación: ");
+        Donacion d = BuscarPorCodigo(codigo);
+
+        if (d == null)
+        {
+            Console.WriteLine("No existe una donación con ese código.");
+            return;
+        }
+
+        if (d.estado != "Reservada")
+        {
+            Console.WriteLine("La donación no está reservada. Estado actual: " + d.estado);
+            return;
+        }
+
+        d.estado = "Entregada";
+
+        for (int i = 0; i < reservas.Count; i++)
+        {
+            if (reservas[i].codigoDonacion == d.codigo)
+                reservas[i].estado = "Entregada";
+        }
+
+        Console.WriteLine("\n[OK] La donación " + d.codigo + " fue marcada como ENTREGADA.");
+    }
+
+    // =====================================================
+    // MÉTODOS DE APOYO (utilidades reutilizables)
+    // =====================================================
+
+    // Busca una donación por su código. Devuelve null si no existe.
+    static Donacion BuscarPorCodigo(string codigo)
+    {
+        for (int i = 0; i < donaciones.Count; i++)
+        {
+            if (donaciones[i].codigo.ToLower() == codigo.ToLower())
+                return donaciones[i];
+        }
+        return null;
+    }
+
+    // Lee un número entero desde el teclado. Repite si el usuario escribe mal.
+    static int LeerEntero(string mensaje)
+    {
+        int numero = 0;
+        bool valido = false;
+
+        while (!valido)
+        {
+            Console.Write(mensaje);
+            try
+            {
+                numero = int.Parse(Console.ReadLine());
+                valido = true;
+            }
+            catch
+            {
+                Console.WriteLine("Debe ingresar un número entero.");
+            }
+        }
+        return numero;
+    }
+
+    // Lee un entero y exige que sea mayor que cero.
+    static int LeerEnteroPositivo(string mensaje)
+    {
+        int numero = 0;
+        while (numero <= 0)
+        {
+            numero = LeerEntero(mensaje);
+            if (numero <= 0)
+                Console.WriteLine("El valor debe ser mayor que cero.");
+        }
+        return numero;
+    }
+
+    // Lee un texto y no permite que quede vacío.
+    static string LeerTexto(string mensaje)
+    {
+        string texto = "";
+        while (texto == "")
+        {
+            Console.Write(mensaje);
+            texto = Console.ReadLine();
+            if (texto == null) texto = "";
+            texto = texto.Trim();
+            if (texto == "")
+                Console.WriteLine("Este campo no puede estar vacío.");
+        }
+        return texto;
+    }
+
+    // Muestra un submenú para escoger la categoría.
+    static string LeerCategoria()
+    {
+        string categoria = "";
+        while (categoria == "")
+        {
+            Console.WriteLine("Seleccione la categoría:");
+            Console.WriteLine("  1. Alimentos");
+            Console.WriteLine("  2. Ropa");
+            Console.Write("Opción: ");
+            string opcion = Console.ReadLine();
+
+            if (opcion == "1") categoria = "Alimentos";
+            else if (opcion == "2") categoria = "Ropa";
+            else Console.WriteLine("Opción no válida.");
+        }
+        return categoria;
+    }
